@@ -3,7 +3,6 @@ from flask_cors import *
 import cv2
 import numpy as np
 import json
-from func import *
 
 app = Flask(__name__)
 CORS(app,supports_credentials = True)
@@ -21,7 +20,7 @@ def sendStart():
 @app.route('/sendEnd/',methods=['POST'])
 def sendEnd():
     print(request)
-    res = calc(context_rcd['imgNum'])
+    res = 5
     return "End with {} frames in all! {}.0/10.0!".format(context_rcd['imgNum'], res)
 
 @app.route('/sendImgs/',methods=['POST'])
