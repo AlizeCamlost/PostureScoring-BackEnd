@@ -66,22 +66,29 @@ def startHandler():
 @app.route('/Img/', methods = ['POST'])
 def imgHandler():
     addr = request.remote_addr
-    file = request.files.to_dict()
-    img =cv2.imdecode(np.asarray(bytearray(file['img'].read()),dtype='uint8'), cv2.IMREAD_COLOR)
-    clientDataDict[addr].addImg(img)
+    # file = request.files.to_dict()
+    img_dict = request.files.to_dict()
+    for key in img_dict:  # only one key-value pair
+        tmpImg = cv2.imdecode(np.asarray(bytearray(img_dict[key].read()),dtype='uint8'), cv2.IMREAD_COLOR)
+        # cv2.imwrite("{}.jpg".format(key), tmpImg)
+        # context_rcd['imgNum'] += 1
+        clientDataDict[addr].addImg(tmpImg)
 
-    #cv2.imwrite('img2.jpg', img) #这句话是测试用的
+        # img =cv2.imdecode(np.asarray(bytearray(file['img'].read()),dtype='uint8'), cv2.IMREAD_COLOR)
+        # clientDataDict[addr].addImg(img)
 
+        #cv2.imwrite('img2.jpg', img) #这句话是测试用的
 
-    # 找到对应的标准动作帧
-    target = clientDataDict[addr].targetAction
-    standardFrame = standardData[target]
+        # 找到对应的标准动作帧
+        target = clientDataDict[addr].targetAction
+        standardFrame = standardData[target]
     
-    # 下面调计算score的函数
-    score = cal.cal_similarity_score(model, img, standardFrame[0]) # 帧号要从请求里解析
+        # 下面调计算score的函数
+        score = cal.cal_similarity_score(model, tmpImg, standardFrame[int(key)]) # 帧号要从请求里解析
+        print("score:",score)
 
     #计算完以后算一个分给到我的dict里面
-    clientScoreDict[addr].addScore(score)
+        clientScoreDict[addr].addScore(score)
 
     return Response()
 
@@ -90,7 +97,8 @@ def endHandler():
     addr = request.remote_addr
     ret = clientScoreDict[addr].avg()
     #ret = 100
-    return {'score': str(ret)}
+    # return {'score': str(ret)}
+    return "score:{}".format(ret)
 
 
 if __name__ == '__main__':
@@ -98,7 +106,7 @@ if __name__ == '__main__':
     def readStandardData( dict ):
         #像这样读就行 xxx是动作的名字
         st = np.load('standard.npy')
-        dict['xxx'] = st
+        dict['pushup'] = st
 
     def readStandardFrames(dict, folderPath): #'./standardFrames',但帧的存储格式是./standardFrames/xxx/xxx.npy
         for root, dirs, files in os.walk(folderPath):
