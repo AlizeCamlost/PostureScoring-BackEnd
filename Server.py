@@ -31,7 +31,8 @@ def sendStart():
 @app.route('/sendEnd/',methods=['POST'])    # send the "END" flag
 def sendEnd():
     print(request)
-    res = calc(context_rcd['imgNum'])
+    # res = calc(context_rcd['imgNum'])
+    res = 5
     return "End with {} frames in all! {}.0/10.0!".format(context_rcd['imgNum'], res)
 
 @app.route('/sendImgs/',methods=['POST'])   # send a picture
@@ -157,5 +158,5 @@ if __name__ == '__main__':
     # readStandardData(standardData)
     readStandardFrames(standardData, './standardFrames')
 
-    app.run(host='0.0.0.0',debug=False,port=5000)   # NOTE: port-9001 is to client.py, port-5000 is to react-app
+    app.run(host='0.0.0.0',debug=True,port=5000)   # NOTE: port-9001 is to client.py, port-5000 is to react-app
 
