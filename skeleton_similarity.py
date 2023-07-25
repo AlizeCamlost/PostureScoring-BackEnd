@@ -43,6 +43,7 @@ def cal_angle_distance(angle1, angle2):
 
 def score_angle_similarity(angle1, angle2):
     diff = joint_wise_distance(angle1, angle2)
+    jwd = diff
     weight = np.ones(8)
     weight[1] = weight[2] = weight[5] = weight[6] = 2
     weight = weight / np.sum(weight)
@@ -50,7 +51,7 @@ def score_angle_similarity(angle1, angle2):
     diff = 1 - diff
     diff = diff * weight
     similarity = np.sum(diff) * 100
-    return similarity
+    return similarity, jwd
 
 def joint_wise_distance(angle1, angle2):
     angle1 = np.array(angle1)
@@ -62,23 +63,71 @@ def point_wise_distance(skeleton1, skeleton2):
     diff = np.linalg.norm(skeleton1 - skeleton2, axis=1)
     return diff
 
-def score_point_similarity(skeleton1, skeleton2):
-    diff = point_wise_distance(skeleton1, skeleton2)
-    max_diff = np.max(diff)
+# def score_point_similarity(skeleton1, skeleton2):
+#     diff = point_wise_distance(skeleton1, skeleton2)
+#     # max_diff = np.max(diff)
+#     weights = np.ones(17)
+#     weights[0:5] = 0
+#     weights[7] = weights[8] = weights[13] = weights[14] = 2
+#     weights = weights / np.sum(weights)
+#     diff = (diff - np.min(diff)) / (np.max(diff) - np.min(diff))
+#     diff = diff * weights
+#     # similarity = 100 - np.sum(diff) / (np.linalg.norm(skeleton1[6] - skeleton1[5]) * 17) * 100
+#     # similarity = 100 - np.sum(diff) / (max_diff * 17) * 100
+#     avg_distance = np.mean(diff)
+#     similarity = abs(1 - avg_distance) * 100
+
+#     return similarity
+
+def PWS(skeleton1, skeleton2):
+    diff = np.linalg.norm(skeleton1-skeleton2, axis=-1)
+    log_diff = np.log1p(diff)
+    max_diff = np.max(log_diff)
+    normalized_diff = -np.exp(-diff)+1
+    # -np.exp(-diff)+1
+
     weights = np.ones(17)
     weights[0:5] = 0
     weights[7] = weights[8] = weights[13] = weights[14] = 2
     weights = weights / np.sum(weights)
-    diff = diff * weights
-    # similarity = 100 - np.sum(diff) / (np.linalg.norm(skeleton1[6] - skeleton1[5]) * 17) * 100
-    similarity = 100 - np.sum(diff) / (max_diff * 17) * 100
+
+    weighted_diff = normalized_diff * weights
+    similarity = 100 - np.sum(weighted_diff) / 17 * 100
     return similarity
 
+def score_point_similarity(skeleton1, skeleton2):
+    max_X = np.max([skeleton1[:, 0], skeleton2[:, 0]])
+    min_X = np.min([skeleton1[:, 0], skeleton2[:, 0]])
+    max_Y = np.max([skeleton1[:, 1], skeleton2[:, 1]])
+    min_Y = np.min([skeleton1[:, 1], skeleton2[:, 1]])
+    centroid_skeleton1 = np.mean(skeleton1, axis=0)
+    centroid_skeleton2 = np.mean(skeleton2, axis=0)
+    centroid_distance = np.linalg.norm(centroid_skeleton1 - centroid_skeleton2)
+    max_distance_MBR = np.sqrt((max_X - min_X) ** 2 + (max_Y - min_Y) ** 2)
+    
+    diff = np.linalg.norm(skeleton1-skeleton2, axis=-1)
+    log_diff = np.log1p(diff)
+    max_diff = np.max(log_diff)
+    min_diff = np.min(log_diff)
+
+    normalized_diff = (log_diff - min_diff) / (max_diff - min_diff)
+
+
+    weights = np.ones(17)
+    weights[0:5] = 0
+    weights[7] = weights[8] = weights[13] = weights[14] = 2
+    weights = weights / np.sum(weights)
+
+    weighted_diff = normalized_diff * weights
+    similarity = 100 - np.sum(weighted_diff) / 17 * 100 - centroid_distance / max_distance_MBR * 100
+    return similarity
 
 
 #只看这个就行了，目前调用的是这个
 def score_similarity(skeleton1, angle1, skeleton2, angle2):
-    angle_similarity = score_angle_similarity(angle1, angle2)
+    angle_similarity, jwd = score_angle_similarity(angle1, angle2)
     point_similarity = score_point_similarity(skeleton1, skeleton2)
-    similarity = 0.7*angle_similarity + 0.3*point_similarity
-    return similarity
+    similarity = 0.5*angle_similarity + 0.5*point_similarity
+    # print("angle_similarity: ", angle_similarity)
+    # print("point_similarity: ", point_similarity)
+    return similarity, jwd

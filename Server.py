@@ -83,8 +83,8 @@ def imgHandler():
         target = clientDataDict[addr].targetAction
         standardFrame = standardData[target]
     
-        # 下面调计算score的函数
-        score = cal.cal_similarity_score(model, tmpImg, standardFrame[int(key)]) # 帧号要从请求里解析
+        # 下面调计算score的函数，返回值score，joint_wise_distance
+        score, _ = cal.cal_similarity_score(model, tmpImg, standardFrame[int(key)]) # 帧号要从请求里解析
         print("score:",score)
 
     #计算完以后算一个分给到我的dict里面
@@ -152,6 +152,8 @@ if __name__ == '__main__':
 
     config = "model/simcc_vipnas-mbv3_8xb64-210e_coco-256x192.py"
     checkpoint = "model/simcc_vipnas-mbv3_8xb64-210e_coco-256x192-719f3489_20220922.pth"
+    # config = "model/simcc_res50_8xb64-210e_coco-256x192.py"
+    # checkpoint = "model/simcc_res50_8xb64-210e_coco-256x192-8e0f5b59_20220919.pth"
     device = "cpu"
     model = init_model(
         config,
@@ -166,5 +168,5 @@ if __name__ == '__main__':
     # readStandardData(standardData)
     readStandardFrames(standardData, './standardFrames')
 
-    app.run(host='0.0.0.0',debug=True,port=5000)   # NOTE: port-9001 is to client.py, port-5000 is to react-app
+    app.run(host='0.0.0.0',debug=True,port=8080)   # NOTE: port-9001 is to client.py, port-5000 is to react-app
 
