@@ -30,28 +30,29 @@ def align_skeletons_deprecated(skeleton1, skeleton2):
 
 
 def align_skeletons(skeleton1, skeleton2):
-    source_centroid = np.mean(skeleton1, axis=0)
-    target_centroid = np.mean(skeleton2, axis=0)
 
-    source_centered = skeleton1 - source_centroid
-    target_centered = skeleton2 - target_centroid
+    input_centroid = np.mean(skeleton1, axis=0)
+    standard_centroid = np.mean(skeleton2, axis=0)
 
+    # 去中心点
+    source_centered = skeleton1 - input_centroid
+    target_centered = skeleton2 - standard_centroid
+
+    # 协方差矩阵
     covariance_matrix = np.dot(source_centered.T, target_centered)
 
-    # 使用SVD对协方差矩阵进行分解，得到旋转矩阵
+    # SVD
     U, _, Vt = np.linalg.svd(covariance_matrix)
-    rotation_matrix = np.dot(U, Vt)
+    rotation_matrix = np.matmul(U,Vt)
+    #R, s = orthogonal_procrustes(source_centered, target_centered)
 
-    # 计算缩放因子
+    # 是否需要进行镜像翻转
+    if np.linalg.det(rotation_matrix) < 0:
+        rotation_matrix[:, -1] *= -1
+
     scale_factor = np.sqrt(np.sum(target_centered ** 2) / np.sum(source_centered ** 2))
 
-    # 计算平移向量
-    translation_vector = target_centroid - source_centroid * scale_factor
-
-    # 将原始关键点集合应用缩放、旋转和平移变换
-    skeleton1[:] *= scale_factor
-    skeleton1[:] = np.dot(skeleton1, rotation_matrix.T)
-    skeleton1[:] += translation_vector
+    skeleton1[:] = np.dot(source_centered * scale_factor, rotation_matrix) + standard_centroid
 
 #不用管
 def acc_scale_skeletons(skeleton1, skeleton2):
